@@ -37,17 +37,45 @@ suite('Functional Tests', () => {
 
   suite('Routing tests', () => {
 
-    /*
-    suite('POST /api/books with title => create book object/expect book object', function() {
-      test('Test POST /api/books with title', function(done) {
-        //done();
-      });
+    suite('POST /api/books with title => create book object/expect book object', function () {
+      test('Test POST /api/books with title', (done) => {
+        const currentTimeStamp = Date.now();
+        chai.request(server)
+          .post('/api/books')
+          .send({
+            title: `SampleTitle - ${currentTimeStamp}`
+          })
+          .end((_err, res) => {
+            assert.equal(res.status, 200)
+            done()
+          })
+      }).timeout(4000);
 
-      test('Test POST /api/books with no title given', function(done) {
-        //done();
-      });
+      test('Test POST /api/books with no title given', (done) => {
+        chai.request(server)
+          .post('/api/books')
+          .send({})
+          .end((_err, res) => {
+            assert.equal(res.status, 400)
+            assert.equal(res.text, 'missing required field title')
+            done()
+          })
+      }).timeout(4000);
+
+      // Must be html entity escaped
+      test('Test POST /api/books with html tag', (done) => {
+        chai.request(server)
+          .post('/api/books')
+          .send({
+            title: '<b>should escaped</b>'
+          })
+          .end((_err, res) => {
+            assert.equal(res.status, 200)
+            assert.equal(res.body.title, '&lt;b&gt;should escaped&lt;&#x2F;b&gt;')
+            done()
+          })
+      }).timeout(4000);
     });
-    */
 
     suite('GET /api/books => array of books', () => {
       test('Test GET /api/books', (done) => {
