@@ -61,6 +61,20 @@ suite('Functional Tests', () => {
             done()
           })
       }).timeout(4000);
+
+      // Must be html entity escaped
+      test('Test POST /api/books with html tag', (done) => {
+        chai.request(server)
+          .post('/api/books')
+          .send({
+            title: '<b>should escaped</b>'
+          })
+          .end((_err, res) => {
+            assert.equal(res.status, 200)
+            assert.equal(res.body.title, '&lt;b&gt;should escaped&lt;&#x2F;b&gt;')
+            done()
+          })
+      }).timeout(4000);
     });
 
     suite('GET /api/books => array of books', () => {

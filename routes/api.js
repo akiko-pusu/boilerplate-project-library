@@ -10,10 +10,19 @@
 
 const mongoUtil = require('../connection.js');
 
+const {
+  body
+} = require('express-validator');
+
+// for Bulk escape posted data
+const validateBody = [
+  body('*').trim().escape()
+];
+
 module.exports = function (app) {
 
   app.route('/api/books')
-    .get(async function (req, res) {
+    .get(async (req, res) => {
       //response will be array of book objects
       //json res format: [{"_id": bookid, "title": book_title, "commentcount": num_of_comments },...]
       const collection = mongoUtil.getCollection('books');
@@ -22,7 +31,7 @@ module.exports = function (app) {
       return res.json(result);
     })
 
-    .post(async function (req, res) {
+    .post(validateBody, async (req, res) => {
       // validationが必要
       // MongoDBの処理を待つので async functionにする
       //
