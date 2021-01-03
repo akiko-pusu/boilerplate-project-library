@@ -27,6 +27,11 @@ module.exports = function (app) {
       // MongoDBの処理を待つので async functionにする
       //
       let title = req.body.title;
+
+      if (!title || title.length === 0) {
+        res.status(400)
+        return res.send(`missing required field title`)
+      }
       //response will contain new book object including atleast _id and title
       const collection = mongoUtil.getCollection('books');
       const result = await registerBook(collection, title);

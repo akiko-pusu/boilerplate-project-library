@@ -51,11 +51,16 @@ suite('Functional Tests', () => {
           })
       }).timeout(4000);
 
-      /*
-      test('Test POST /api/books with no title given', function(done) {
-        //done();
-      });
-      */
+      test('Test POST /api/books with no title given', (done) => {
+        chai.request(server)
+          .post('/api/books')
+          .send({})
+          .end((_err, res) => {
+            assert.equal(res.status, 400)
+            assert.equal(res.text, 'missing required field title')
+            done()
+          })
+      }).timeout(4000);
     });
 
     suite('GET /api/books => array of books', () => {
