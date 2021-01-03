@@ -55,18 +55,25 @@ module.exports = function (app) {
       //if successful response will be 'delete successful'
     });
 
+  // booksを取得する
   async function getBooks(collection) {
-    const pipeline = [
-      {
-        '$project': {
-          '_id': 1,
-          'title': 1,
-          'commentcount': {
-            '$size': '$comments'
+    // アグリゲーションに渡すパイプラインを指定
+    // $projectは抽出するフィールドの指定。1が抽出対象で、本来はcommentsフィールドがあるが、一覧では
+    // コメントの件数を表示させるため、commentcountという集計用フィールドを定義し$sizeで配列の件数をセット
+    // 新規登録時点ではコメントが0（commentsフィールドが無い）の場合があるのでifNullを利用
+    const pipeline = [{
+      '$project': {
+        '_id': 1,
+        'title': 1,
+        'commentcount': {
+          '$size': {
+            '$ifNull': [
+              '$comments', []
+            ]
           }
         }
       }
-    ];
+    }];
 
     // See https://mongodb.github.io/node-mongodb-native/3.3/api/Collection.html#aggregate
     // for the aggregate() docs.
