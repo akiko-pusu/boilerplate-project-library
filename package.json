@@ -27,6 +27,7 @@
 	],
 	"license": "MIT",
 	"devDependencies": {
-		"dotenv": "^8.2.0"
+		"dotenv": "^8.2.0",
+		"express-validator": "^6.9.0"
 	}
 }
