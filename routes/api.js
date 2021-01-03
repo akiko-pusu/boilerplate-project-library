@@ -22,9 +22,16 @@ module.exports = function (app) {
       return res.json(result);
     })
 
-    .post(function (req, res) {
+    .post(async function (req, res) {
+      // validationが必要
+      // MongoDBの処理を待つので async functionにする
+      //
       let title = req.body.title;
       //response will contain new book object including atleast _id and title
+      const collection = mongoUtil.getCollection('books');
+      const result = await registerBook(collection, title);
+
+      return res.json(result);
     })
 
     .delete(function (req, res) {
@@ -75,5 +82,23 @@ module.exports = function (app) {
     // toArray()の場合は1000件程度で残りはイテレーションしないと取れない
     // let result = await aggCursor.toArray();
     return result;
+  }
+
+  // bookを登録する
+  async function registerBook(collection, title) {
+    // insertOne() を利用
+    // https://mongodb.github.io/node-mongodb-native/3.3/api/Collection.html#insertOne
+    // insertOneWriteOpResult (オブジェクト)をコールバックで返す
+    const callbackResult = await collection.insertOne({
+      title: title,
+      comments: []
+    });
+    if (callbackResult.result.ok === 1) {
+      return {
+        _id: callbackResult.insertedId,
+        title: title
+      };
+    }
+    throw 'Failed to nsertOne.';
   }
 };

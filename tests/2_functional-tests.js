@@ -37,17 +37,26 @@ suite('Functional Tests', () => {
 
   suite('Routing tests', () => {
 
-    /*
-    suite('POST /api/books with title => create book object/expect book object', function() {
-      test('Test POST /api/books with title', function(done) {
-        //done();
-      });
+    suite('POST /api/books with title => create book object/expect book object', function () {
+      test('Test POST /api/books with title', (done) => {
+        const currentTimeStamp = Date.now();
+        chai.request(server)
+          .post('/api/books')
+          .send({
+            title: `SampleTitle - ${currentTimeStamp}`
+          })
+          .end((_err, res) => {
+            assert.equal(res.status, 200)
+            done()
+          })
+      }).timeout(4000);
 
+      /*
       test('Test POST /api/books with no title given', function(done) {
         //done();
       });
+      */
     });
-    */
 
     suite('GET /api/books => array of books', () => {
       test('Test GET /api/books', (done) => {
