@@ -16,11 +16,10 @@ module.exports = function (app) {
     .get(async function (req, res) {
       //response will be array of book objects
       //json res format: [{"_id": bookid, "title": book_title, "commentcount": num_of_comments },...]
-      // const db = mongoUtil.getDb()
       const collection = mongoUtil.getCollection('books');
-      await getBooks(collection);
+      const result = await getBooks(collection);
 
-      return res.json({ status: 'ok' });
+      return res.json(result);
     })
 
     .post(function (req, res) {
@@ -31,8 +30,6 @@ module.exports = function (app) {
     .delete(function (req, res) {
       //if successful response will be 'complete delete successful'
     });
-
-
 
   app.route('/api/books/:id')
     .get(function (req, res) {
@@ -64,11 +61,19 @@ module.exports = function (app) {
       }
     ];
 
-    // See http://bit.ly/Node_aggregate for the aggregate() docs
+    // See https://mongodb.github.io/node-mongodb-native/3.3/api/Collection.html#aggregate
+    // for the aggregate() docs.
+    // aggregate() returns AggregationCursor.
+    // See https://mongodb.github.io/node-mongodb-native/3.3/api/AggregationCursor.html
+    // 全て取り出すにはforEachを使う (AggregationCursor#toArray()はバッチサイズ1つ分だけ)
     const aggCursor = collection.aggregate(pipeline);
-
+    const result = []
     await aggCursor.forEach(document => {
-      console.log(`${document._id}: ${document.title}, count: ${document.commentcount}`);
+      result.push(document);
     });
+
+    // toArray()の場合は1000件程度で残りはイテレーションしないと取れない
+    // let result = await aggCursor.toArray();
+    return result;
   }
 };
