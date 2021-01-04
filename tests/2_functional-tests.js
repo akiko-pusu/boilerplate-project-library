@@ -14,6 +14,7 @@ const server = require('../server');
 chai.use(chaiHttp);
 
 suite('Functional Tests', () => {
+  let lastObject = {};
 
   /*
    * ----[EXAMPLE TEST]----
@@ -43,11 +44,12 @@ suite('Functional Tests', () => {
         chai.request(server)
           .post('/api/books')
           .send({
-            title: `SampleTitle - ${currentTimeStamp}`
+            title: `SampleTitle - ${currentTimeStamp}`,
+            comments: ['1st comment']
           })
           .end((_err, res) => {
-            assert.equal(res.status, 200)
-            done()
+            assert.equal(res.status, 200);
+            done();
           })
       }).timeout(4000);
 
@@ -56,9 +58,9 @@ suite('Functional Tests', () => {
           .post('/api/books')
           .send({})
           .end((_err, res) => {
-            assert.equal(res.status, 200)
-            assert.equal(res.text, 'missing required field title')
-            done()
+            assert.equal(res.status, 200);
+            assert.equal(res.text, 'missing required field title');
+            done();
           })
       }).timeout(4000);
 
@@ -70,14 +72,14 @@ suite('Functional Tests', () => {
             title: '<b>should escaped</b>'
           })
           .end((_err, res) => {
-            assert.equal(res.status, 200)
-            assert.equal(res.body.title, '&lt;b&gt;should escaped&lt;&#x2F;b&gt;')
-            done()
+            assert.equal(res.status, 200);
+            assert.equal(res.body.title, '&lt;b&gt;should escaped&lt;&#x2F;b&gt;');
+            done();
           })
       }).timeout(4000);
     });
 
-    suite('GET /api/books => array of books', () => {
+    suite('GET /api/books => array of books', function () {
       test('Test GET /api/books', (done) => {
         chai.request(server)
           .get('/api/books')
@@ -89,23 +91,53 @@ suite('Functional Tests', () => {
             assert.property(res.body[0], '_id', 'Books in array should contain _id');
 
             // get LastObject
-            lastObject = res.body.pop()
+            lastObject = res.body.pop();
             done()
           });
-      });
-    }).timeout(4000);
-
-    /*
-    suite('GET /api/books/[id] => book object with [id]', function(){
-      test('Test GET /api/books/[id] with id not in db',  function(done){
-        //done();
-      });
-
-      test('Test GET /api/books/[id] with valid id in db',  function(done){
-        //done();
-      });
+      }).timeout(4000);
     });
-    */
+
+    suite('GET /api/books/[id] => book object with [id]', function () {
+      test('Test GET /api/books/[id] with id not in db', (done) => {
+        const id = '8faf84b9d50ae9233ea21a13';
+        chai.request(server)
+          .get(`/api/books/${id}`)
+          .end((_err, res) => {
+            assert.equal(res.status, 200);
+            assert.equal(res.text, `no book exists`);
+            done();
+          });
+      }).timeout(4000);
+
+      test('Test GET /api/books/[id] with valid id in db', (done) => {
+        const id = lastObject._id;
+        console.log(lastObject._id);
+        chai.request(server)
+          .get(`/api/books/${id}`)
+          .end((_err, res) => {
+            assert.equal(res.status, 200)
+            const document = res.body;
+            console.log(document);
+            assert.isObject(document, 'response should be an object');
+            assert.isArray(document.comments, 'comments', 'has comments');
+            assert.property(document, 'title', 'has title');
+            assert.property(document, '_id', 'has _id');
+
+            done();
+          });
+      }).timeout(4000);
+
+      test('Test GET /api/books/[id] with invalid format id', (done) => {
+        const id = '8faf84';
+        chai.request(server)
+          .get(`/api/books/${id}`)
+          .end((_err, res) => {
+            assert.equal(res.status, 400);
+            assert.equal(res.text, `_id error`);
+            done();
+          });
+      }).timeout(4000);
+    });
 
     /*
     suite('POST /api/books/[id] => add comment/expect book object with id', function(){

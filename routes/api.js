@@ -9,6 +9,8 @@
 'use strict';
 
 const mongoUtil = require('../connection.js');
+// To validate MongoDB's document id.
+const ObjectId = require('mongodb').ObjectID;
 
 const {
   body
@@ -54,9 +56,22 @@ module.exports = function (app) {
     });
 
   app.route('/api/books/:id')
-    .get(function (req, res) {
-      let bookid = req.params.id;
-      //json res format: {"_id": bookid, "title": book_title, "comments": [comment,comment,...]}
+    .get(async (req, res) => {
+      const bookid = req.params.id;
+
+      // _id must be a single String of 12 bytes or a string of 24 hex characters
+      if (bookid === undefined || bookid.length === 0 || !ObjectId.isValid(bookid)) {
+        res.status(400)
+        return res.send('_id error')
+      }
+
+      const collection = mongoUtil.getCollection('books');
+      const result = await getBook(collection, bookid);
+
+      if (!result || !result._id) {
+        return res.send('no book exists')
+      }
+      return res.json(result);
     })
 
     .post(function (req, res) {
@@ -121,6 +136,14 @@ module.exports = function (app) {
         title: title
       };
     }
-    throw 'Failed to nsertOne.';
+    throw 'Failed to insertOne.';
+  }
+
+  // Find one document.
+  // Ref. https://mongodb.github.io/node-mongodb-native/3.3/api/Collection.html#findOne
+  async function getBook(collection, bookid) {
+    // Return resultCallback(error, result)
+    // Ref.https://mongodb.github.io/node-mongodb-native/3.3/api/Collection.html#~resultCallback
+    return await collection.findOne({ _id: ObjectId(bookid) })
   }
 };
