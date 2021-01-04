@@ -56,7 +56,7 @@ suite('Functional Tests', () => {
           .post('/api/books')
           .send({})
           .end((_err, res) => {
-            assert.equal(res.status, 400)
+            assert.equal(res.status, 200)
             assert.equal(res.text, 'missing required field title')
             done()
           })
