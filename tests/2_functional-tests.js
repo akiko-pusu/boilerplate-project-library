@@ -15,7 +15,6 @@ chai.use(chaiHttp);
 
 suite('Functional Tests', () => {
   let lastObject = {};
-
   /*
    * ----[EXAMPLE TEST]----
    * Each test should completely test the response of the API end-point including response status code!
@@ -29,9 +28,11 @@ suite('Functional Tests', () => {
         assert.property(res.body[0], 'commentcount', 'Books in array should contain commentcount');
         assert.property(res.body[0], 'title', 'Books in array should contain title');
         assert.property(res.body[0], '_id', 'Books in array should contain _id');
+        // get LastObject
+        lastObject = res.body.pop();
         done();
       });
-  }).timeout(4000);
+  }).timeout(1000);
   /*
    * ----[END of EXAMPLE TEST]----
    */
@@ -91,10 +92,10 @@ suite('Functional Tests', () => {
             assert.property(res.body[0], '_id', 'Books in array should contain _id');
 
             // get LastObject
-            lastObject = res.body.pop();
+            // lastObject = res.body.pop();
             done()
           });
-      }).timeout(4000);
+      }).timeout(1000);
     });
 
     suite('GET /api/books/[id] => book object with [id]', function () {
@@ -105,24 +106,6 @@ suite('Functional Tests', () => {
           .end((_err, res) => {
             assert.equal(res.status, 200);
             assert.equal(res.text, `no book exists`);
-            done();
-          });
-      }).timeout(4000);
-
-      test('Test GET /api/books/[id] with valid id in db', (done) => {
-        const id = lastObject._id;
-        console.log(lastObject._id);
-        chai.request(server)
-          .get(`/api/books/${id}`)
-          .end((_err, res) => {
-            assert.equal(res.status, 200)
-            const document = res.body;
-            console.log(document);
-            assert.isObject(document, 'response should be an object');
-            assert.isArray(document.comments, 'comments', 'has comments');
-            assert.property(document, 'title', 'has title');
-            assert.property(document, '_id', 'has _id');
-
             done();
           });
       }).timeout(4000);
@@ -139,21 +122,53 @@ suite('Functional Tests', () => {
       }).timeout(4000);
     });
 
-    /*
-    suite('POST /api/books/[id] => add comment/expect book object with id', function(){
-      test('Test POST /api/books/[id] with comment', function(done){
-        //done();
-      });
+    suite('POST /api/books/[id] => add comment/expect book object with id', function () {
+      test('Test POST /api/books/[id] with comment, id not in db', (done) => {
+        const id = '8faf84b9d50ae9233ea21a13';
+        chai.request(server)
+          .post(`/api/books/${id}`)
+          .send({
+            comment: `New Comment for ${id}`
+          })
+          .end((_err, res) => {
+            assert.equal(res.status, 200);
+            assert.equal(res.text, `no book exists`);
+            done();
+          });
+      }).timeout(4000);
 
-      test('Test POST /api/books/[id] without comment field', function(done){
-        //done();
-      });
+      test('Test POST /api/books/[id] with comment', (done) => {
+        const id = lastObject._id;
+        const beforeCommentsCount = lastObject.commentcount;
+        chai.request(server)
+          .post(`/api/books/${id}`)
+          .send({
+            comment: `New Comment for ${id}`
+          })
+          .end((_err, res) => {
+            assert.equal(res.status, 200)
+            const document = res.body;
+            assert.isObject(document, 'response should be an object');
+            assert.isArray(document.comments, 'comments', 'has comments');
+            assert.property(document, 'title', 'has title');
+            assert.property(document, '_id', 'has _id');
+            assert.equal(document.comments.length, beforeCommentsCount + 1)
+            done();
+          });
+      }).timeout(4000);
 
-      test('Test POST /api/books/[id] with comment, id not in db', function(done){
-        //done();
-      });
+      test('Test POST /api/books/[id] without comment field', (done) => {
+        const id = lastObject._id;
+        chai.request(server)
+          .post(`/api/books/${id}`)
+          .send({})
+          .end((_err, res) => {
+            assert.equal(res.status, 200);
+            assert.equal(res.text, `missing required field comment`);
+            done();
+          });
+      }).timeout(4000);
     });
-    */
 
     /*
     suite('DELETE /api/books/[id] => delete book object id', function() {
