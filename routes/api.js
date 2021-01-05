@@ -74,10 +74,27 @@ module.exports = function (app) {
       return res.json(result);
     })
 
-    .post(function (req, res) {
-      let bookid = req.params.id;
-      let comment = req.body.comment;
-      //json res format same as .get
+    .post(validateBody, async (req, res) => {
+      const comment = req.body.comment;
+      const bookid = req.params.id;
+
+      // _id must be a single String of 12 bytes or a string of 24 hex characters
+      if (bookid === undefined || bookid.length === 0 || !ObjectId.isValid(bookid)) {
+        res.status(400)
+        return res.send('_id error')
+      }
+
+      if (comment === undefined || comment.length === 0) {
+        return res.send('missing required field comment');
+      }
+
+      const collection = mongoUtil.getCollection('books');
+      const result = await updateBook(collection, bookid, comment);
+
+      if (!result || !result._id) {
+        return res.send('no book exists')
+      }
+      return res.json(result);
     })
 
     .delete(function (req, res) {
@@ -125,7 +142,7 @@ module.exports = function (app) {
   async function registerBook(collection, title) {
     // insertOne() を利用
     // https://mongodb.github.io/node-mongodb-native/3.3/api/Collection.html#insertOne
-    // insertOneWriteOpResult (オブジェクト)をコールバックで返す
+    // findAndModifyWriteOpResult (Object) をresultとして返してくれる
     const callbackResult = await collection.insertOne({
       title: title,
       comments: []
@@ -144,6 +161,27 @@ module.exports = function (app) {
   async function getBook(collection, bookid) {
     // Return resultCallback(error, result)
     // Ref.https://mongodb.github.io/node-mongodb-native/3.3/api/Collection.html#~resultCallback
-    return await collection.findOne({ _id: ObjectId(bookid) })
+    return await collection.findOne({
+      _id: ObjectId(bookid)
+    })
+  }
+
+  async function updateBook(collection, bookid, comment) {
+    // findOneAndUpdate() を利用
+    // https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#findOneAndUpdate
+    // findAndModifyWriteOpResult (オブジェクト)をコールバックで返す
+    const callbackResult = await collection.findOneAndUpdate({
+      _id: ObjectId(bookid)
+    }, {
+      $push: {
+        comments: comment
+      }
+    }, {
+      returnOriginal: false
+    });
+    if (callbackResult.ok === 1) {
+      return callbackResult.value
+    }
+    throw 'Failed to findOneAndUpdate.';
   }
 };
