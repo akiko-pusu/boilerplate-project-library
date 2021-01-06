@@ -15,6 +15,20 @@ chai.use(chaiHttp);
 
 suite('Functional Tests', () => {
   let lastObject = {};
+
+  test('Test POST /api/books with html tag', (done) => {
+    chai.request(server)
+      .post('/api/books')
+      .send({
+        title: '<b>should escaped</b>'
+      })
+      .end((_err, res) => {
+        assert.equal(res.status, 200);
+        assert.equal(res.body.title, '&lt;b&gt;should escaped&lt;&#x2F;b&gt;');
+        done();
+      })
+  }).timeout(4000);
+
   /*
    * ----[EXAMPLE TEST]----
    * Each test should completely test the response of the API end-point including response status code!
@@ -30,7 +44,7 @@ suite('Functional Tests', () => {
         assert.property(res.body[0], '_id', 'Books in array should contain _id');
         done();
       });
-  }).timeout(1000);
+  }).timeout(4000);
   /*
    * ----[END of EXAMPLE TEST]----
    */
@@ -91,9 +105,9 @@ suite('Functional Tests', () => {
 
             // get LastObject
             lastObject = res.body.pop();
-            done()
+            done();
           });
-      }).timeout(1000);
+      }).timeout(4000);
     });
 
     suite('GET /api/books/[id] => book object with [id]', function () {
@@ -116,7 +130,6 @@ suite('Functional Tests', () => {
           .end((_err, res) => {
             assert.equal(res.status, 200)
             const document = res.body;
-            console.log(document);
             assert.isObject(document, 'response should be an object');
             assert.isArray(document.comments, 'comments', 'has comments');
             assert.property(document, 'title', 'has title');
@@ -185,16 +198,40 @@ suite('Functional Tests', () => {
       }).timeout(4000);
     });
 
-    /*
-    suite('DELETE /api/books/[id] => delete book object id', function() {
-      test('Test DELETE /api/books/[id] with valid id in db', function(done){
-        //done();
-      });
+    suite('DELETE /api/books/[id] => delete book object id', function () {
+      test('Test DELETE /api/books/[id] with valid id in db', (done) => {
+        const id = lastObject._id;
+        chai.request(server)
+          .delete(`/api/books/${id}`)
+          .end((_err, res) => {
+            assert.equal(res.status, 200);
+            assert.equal(res.text, `delete successful`);
+            done();
+          });
+      }).timeout(4000);
 
-      test('Test DELETE /api/books/[id] with  id not in db', function(done){
-        //done();
-      });
+      test('Test DELETE /api/books/[id] with  id not in db', (done) => {
+        const id = '8faf84b9d50ae9233ea21a13';
+        chai.request(server)
+          .delete(`/api/books/${id}`)
+          .end((_err, res) => {
+            assert.equal(res.status, 200);
+            assert.equal(res.text, `no book exists`);
+            done();
+          });
+      }).timeout(4000);
     });
-    */
+
+    suite('DELETE /api/books => delete all books', function () {
+      test('Test DELETE /api/books', (done) => {
+        chai.request(server)
+          .delete('/api/books')
+          .end((_err, res) => {
+            assert.equal(res.status, 200);
+            assert.equal(res.text, `complete delete successful`);
+            done();
+          });
+      }).timeout(4000);
+    });
   });
 });

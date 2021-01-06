@@ -24,7 +24,7 @@ const validateBody = [
 module.exports = function (app) {
 
   app.route('/api/books')
-    .get(async (req, res) => {
+    .get(async (_req, res) => {
       //response will be array of book objects
       //json res format: [{"_id": bookid, "title": book_title, "commentcount": num_of_comments },...]
       const collection = mongoUtil.getCollection('books');
@@ -51,8 +51,16 @@ module.exports = function (app) {
       return res.json(result);
     })
 
-    .delete(function (req, res) {
-      //if successful response will be 'complete delete successful'
+    .delete(async (_req, res) => {
+      const collection = mongoUtil.getCollection('books');
+      const result = await deleteBooks(collection);
+
+      if (result === undefined || !result.result.ok) {
+        return res.send('delete failed.');
+      }
+
+      console.log(`Removed: ${result.deletedCount} documents`);
+      return res.send('complete delete successful');
     });
 
   app.route('/api/books/:id')
@@ -97,9 +105,22 @@ module.exports = function (app) {
       return res.json(result);
     })
 
-    .delete(function (req, res) {
-      let bookid = req.params.id;
-      //if successful response will be 'delete successful'
+    .delete(async (req, res) => {
+      const bookid = req.params.id;
+
+      // _id must be a single String of 12 bytes or a string of 24 hex characters
+      if (bookid === undefined || bookid.length === 0 || !ObjectId.isValid(bookid)) {
+        res.status(400)
+        return res.send('_id error')
+      }
+
+      const collection = mongoUtil.getCollection('books');
+      const result = await deleteBooks(collection, bookid);
+
+      if (result == undefined || result.deletedCount == 0) {
+        return res.send('no book exists')
+      }
+      return res.send('delete successful');
     });
 
   // booksを取得する
@@ -180,8 +201,20 @@ module.exports = function (app) {
       returnOriginal: false
     });
     if (callbackResult.ok === 1) {
-      return callbackResult.value
+      return callbackResult.value;
     }
     throw 'Failed to findOneAndUpdate.';
+  }
+
+  // Delete one or all
+  // Ref. https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#deleteMany
+  async function deleteBooks(collection, bookid) {
+    let filter = {};
+    if (bookid) {
+      filter._id = ObjectId(bookid);
+    }
+    // Return deleteWriteOpCallback(error, result) / deleteWriteOpResult
+    // Ref.https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#~deleteWriteOpCallback
+    return await collection.deleteMany(filter);
   }
 };
