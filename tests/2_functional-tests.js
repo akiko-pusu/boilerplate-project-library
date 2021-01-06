@@ -28,8 +28,6 @@ suite('Functional Tests', () => {
         assert.property(res.body[0], 'commentcount', 'Books in array should contain commentcount');
         assert.property(res.body[0], 'title', 'Books in array should contain title');
         assert.property(res.body[0], '_id', 'Books in array should contain _id');
-        // get LastObject
-        lastObject = res.body.pop();
         done();
       });
   }).timeout(1000);
@@ -92,7 +90,7 @@ suite('Functional Tests', () => {
             assert.property(res.body[0], '_id', 'Books in array should contain _id');
 
             // get LastObject
-            // lastObject = res.body.pop();
+            lastObject = res.body.pop();
             done()
           });
       }).timeout(1000);
@@ -106,6 +104,23 @@ suite('Functional Tests', () => {
           .end((_err, res) => {
             assert.equal(res.status, 200);
             assert.equal(res.text, `no book exists`);
+            done();
+          });
+      }).timeout(4000);
+
+      test('Test GET /api/books/[id] with valid id in db', (done) => {
+        const id = lastObject._id;
+        console.log(lastObject._id);
+        chai.request(server)
+          .get(`/api/books/${id}`)
+          .end((_err, res) => {
+            assert.equal(res.status, 200)
+            const document = res.body;
+            console.log(document);
+            assert.isObject(document, 'response should be an object');
+            assert.isArray(document.comments, 'comments', 'has comments');
+            assert.property(document, 'title', 'has title');
+            assert.property(document, '_id', 'has _id');
             done();
           });
       }).timeout(4000);
